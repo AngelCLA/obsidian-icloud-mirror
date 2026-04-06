@@ -840,7 +840,7 @@ var ICloudMirrorPlugin = class extends import_obsidian3.Plugin {
     this.blurHandler = null;
   }
   async onload() {
-    console.log("[iCloud Mirror] Loading plugin\u2026");
+    var _a;
     await this.loadSettings();
     this.fileUtils = new FileUtils();
     this.fileUtils.setVerbose(this.settings.verboseLogs);
@@ -854,103 +854,83 @@ var ICloudMirrorPlugin = class extends import_obsidian3.Plugin {
       const adapter = this.app.vault.adapter;
       if (adapter == null ? void 0 : adapter.basePath) {
         this.settings.localVaultPath = adapter.basePath;
-        this.fileUtils.info(
-          `Using vault base path: ${this.settings.localVaultPath}`
-        );
       }
     }
-    this.syncEngine.setStatusCallback((status, stats) => {
-      this.updateRibbonTooltip(status);
+    const syncEngineWithConfig = this.syncEngine;
+    (_a = syncEngineWithConfig.setConfigDir) == null ? void 0 : _a.call(syncEngineWithConfig, this.app.vault.configDir);
+    this.syncEngine.setStatusCallback((_status) => {
     });
     (0, import_obsidian3.addIcon)(
       "cloud-upload",
       `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>`
     );
-    const ribbonIcon = this.addRibbonIcon(
-      "cloud-upload",
-      "iCloud Mirror: Sync Now",
-      () => {
-        this.triggerSync();
-      }
-    );
+    this.addRibbonIcon("cloud-upload", "iCloud Mirror: sync now", () => {
+      void this.triggerSync();
+    });
     this.addCommand({
       id: "sync-now",
-      name: "Sync Now (Local \u2192 iCloud)",
-      callback: () => this.triggerSync()
+      name: "Sync now (local \u2192 iCloud)",
+      callback: () => {
+        void this.triggerSync();
+      }
     });
     this.addCommand({
       id: "pull-from-icloud",
-      name: "Pull from iCloud \u2192 Local",
-      callback: () => this.triggerPull()
+      name: "Pull from iCloud \u2192 local",
+      callback: () => {
+        void this.triggerPull();
+      }
     });
     this.addCommand({
       id: "open-status",
-      name: "Open Status Panel",
+      name: "Open status panel",
       callback: () => this.openStatusModal()
     });
     this.addSettingTab(new ICloudMirrorSettingTab(this.app, this));
     this.registerEvents();
     this.restartAutoSync();
-    this.fileUtils.info("Plugin loaded.");
     new import_obsidian3.Notice("iCloud Mirror loaded \u2713", 3e3);
   }
-  updateRibbonTooltip(status) {
-  }
-  registerEvents() {
-    this.debouncedSync = debounce(() => {
-      if (this.settings.syncOnSave) {
-        this.fileUtils.info("Sync triggered: file saved.");
-        this.triggerSync();
-      }
-    }, this.settings.debounceDelay * 1e3);
-    this.registerEvent(
-      this.app.vault.on("modify", (_file) => {
-        var _a;
-        (_a = this.debouncedSync) == null ? void 0 : _a.call(this);
-      })
-    );
-    this.registerEvent(
-      this.app.vault.on("create", (_file) => {
-        var _a;
-        (_a = this.debouncedSync) == null ? void 0 : _a.call(this);
-      })
-    );
-    this.registerEvent(
-      this.app.vault.on("delete", (_file) => {
-        var _a;
-        (_a = this.debouncedSync) == null ? void 0 : _a.call(this);
-      })
-    );
-    this.registerEvent(
-      this.app.vault.on("rename", (_file, _oldPath) => {
-        var _a;
-        (_a = this.debouncedSync) == null ? void 0 : _a.call(this);
-      })
-    );
-    this.blurHandler = () => {
-      if (this.settings.syncOnBlur) {
-        this.fileUtils.info("Sync triggered: window lost focus.");
-        this.triggerSync();
-      }
-    };
-    window.addEventListener("blur", this.blurHandler);
-  }
-  async onunload() {
+  onunload() {
     if (this.settings.syncOnClose) {
-      this.fileUtils.info("Sync triggered: Obsidian closing.");
-      try {
-        await this.syncEngine.syncLocalToCloud();
-      } catch (e) {
+      void this.syncEngine.syncLocalToCloud().catch((e) => {
         console.error("[iCloud Mirror] Error on close sync:", e);
-      }
+      });
     }
     if (this.blurHandler) {
       window.removeEventListener("blur", this.blurHandler);
     }
     this.stopAutoSync();
-    this.fileUtils.info("Plugin unloaded.");
   }
-  // ── Public helpers ──────────────────────────────────────────────────────
+  registerEvents() {
+    this.debouncedSync = debounce(() => {
+      if (this.settings.syncOnSave) {
+        void this.triggerSync();
+      }
+    }, this.settings.debounceDelay * 1e3);
+    this.registerEvent(this.app.vault.on("modify", () => {
+      var _a;
+      (_a = this.debouncedSync) == null ? void 0 : _a.call(this);
+    }));
+    this.registerEvent(this.app.vault.on("create", () => {
+      var _a;
+      (_a = this.debouncedSync) == null ? void 0 : _a.call(this);
+    }));
+    this.registerEvent(this.app.vault.on("delete", () => {
+      var _a;
+      (_a = this.debouncedSync) == null ? void 0 : _a.call(this);
+    }));
+    this.registerEvent(this.app.vault.on("rename", () => {
+      var _a;
+      (_a = this.debouncedSync) == null ? void 0 : _a.call(this);
+    }));
+    this.blurHandler = () => {
+      if (this.settings.syncOnBlur) {
+        void this.triggerSync();
+      }
+    };
+    window.addEventListener("blur", this.blurHandler);
+  }
   async triggerSync() {
     try {
       await this.syncEngine.syncLocalToCloud();
@@ -960,19 +940,18 @@ var ICloudMirrorPlugin = class extends import_obsidian3.Plugin {
         4e3
       );
     } catch (err) {
-      new import_obsidian3.Notice(`\u274C Sync failed: ${err.message}`, 6e3);
+      const msg = err instanceof Error ? err.message : String(err);
+      new import_obsidian3.Notice(`\u274C Sync failed: ${msg}`, 6e3);
     }
   }
   async triggerPull() {
     try {
       await this.syncEngine.syncCloudToLocal();
       const stats = this.syncEngine.getStats();
-      new import_obsidian3.Notice(
-        `\u2B07 Pull complete \u2014 ${stats.filesCopied} files pulled`,
-        4e3
-      );
+      new import_obsidian3.Notice(`\u2B07 Pull complete \u2014 ${stats.filesCopied} files pulled`, 4e3);
     } catch (err) {
-      new import_obsidian3.Notice(`\u274C Pull failed: ${err.message}`, 6e3);
+      const msg = err instanceof Error ? err.message : String(err);
+      new import_obsidian3.Notice(`\u274C Pull failed: ${msg}`, 6e3);
     }
   }
   openStatusModal() {
@@ -980,8 +959,12 @@ var ICloudMirrorPlugin = class extends import_obsidian3.Plugin {
       this.app,
       this.syncEngine,
       this.fileUtils,
-      () => this.triggerSync(),
-      () => this.triggerPull()
+      () => {
+        void this.triggerSync();
+      },
+      () => {
+        void this.triggerPull();
+      }
     ).open();
   }
   restartAutoSync() {
@@ -989,10 +972,8 @@ var ICloudMirrorPlugin = class extends import_obsidian3.Plugin {
     const minutes = this.settings.autoSyncInterval;
     if (minutes > 0) {
       this.autoSyncTimer = setInterval(() => {
-        this.fileUtils.info(`Auto-sync triggered (every ${minutes} min).`);
-        this.triggerSync();
+        void this.triggerSync();
       }, minutes * 60 * 1e3);
-      this.fileUtils.info(`Auto-sync scheduled every ${minutes} minute(s).`);
     }
   }
   stopAutoSync() {
@@ -1009,13 +990,11 @@ var ICloudMirrorPlugin = class extends import_obsidian3.Plugin {
     await this.saveData(this.settings);
     (_a = this.syncEngine) == null ? void 0 : _a.updateSettings(this.settings);
     (_b = this.fileUtils) == null ? void 0 : _b.setVerbose(this.settings.verboseLogs);
-    if (this.debouncedSync !== null) {
-      this.debouncedSync = debounce(() => {
-        if (this.settings.syncOnSave) {
-          this.triggerSync();
-        }
-      }, this.settings.debounceDelay * 1e3);
-    }
+    this.debouncedSync = debounce(() => {
+      if (this.settings.syncOnSave) {
+        void this.triggerSync();
+      }
+    }, this.settings.debounceDelay * 1e3);
   }
 };
 // Annotate the CommonJS export names for ESM import in node:

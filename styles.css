@@ -1,1 +1,78 @@
-/* iCloud Mirror - no custom styles */
+/* iCloud Mirror — styles */
+
+.icm-badge {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 16px;
+  background: var(--icm-badge-color, #666);
+  color: white;
+}
+
+.icm-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.icm-stat-box {
+  background: var(--background-secondary);
+  border-radius: 6px;
+  padding: 10px;
+  text-align: center;
+}
+
+.icm-stat-value {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.icm-stat-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.icm-btn-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.icm-btn {
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
+.icm-btn-sm {
+  margin-top: 8px;
+  padding: 4px 10px;
+}
+
+.icm-log-container {
+  background: var(--background-secondary);
+  border-radius: 6px;
+  padding: 10px;
+  max-height: 250px;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.icm-log-row {
+  padding: 2px 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+  color: var(--text-normal);
+}
+
+.icm-log-error { color: var(--color-red); }
+.icm-log-warn  { color: var(--color-yellow); }
+.icm-log-debug { color: var(--text-muted); }
+
+.icm-textarea {
+  width: 100%;
+}
