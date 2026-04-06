@@ -1,6 +1,5 @@
-import * as fs from "fs";
 import * as path from "path";
-import { ICloudMirrorSettings, SyncDirection, SyncStats, SyncStatus } from "./types";
+import { ICloudMirrorSettings, SyncStats, SyncStatus } from "./types";
 import { FileUtils } from "./fileUtils";
 import { ConflictResolver } from "./conflictResolver";
 
@@ -8,6 +7,7 @@ export type StatusChangeCallback = (status: SyncStatus, stats: SyncStats) => voi
 
 export class SyncEngine {
   private running = false;
+  private configDir: string = ".obsidian";
   private stats: SyncStats = {
     lastSync: null,
     filesCopied: 0,
@@ -24,6 +24,11 @@ export class SyncEngine {
     private fileUtils: FileUtils,
     private conflictResolver: ConflictResolver
   ) {}
+
+  setConfigDir(dir: string) {
+    this.configDir = dir;
+    this.fileUtils.setConfigDir(dir);
+  }
 
   setStatusCallback(cb: StatusChangeCallback) {
     this.onStatusChange = cb;
@@ -121,8 +126,9 @@ export class SyncEngine {
             await this.fileUtils.copyFile(srcAbs, destAbs);
             sessionStats.copied++;
           }
-        } catch (err: any) {
-          this.fileUtils.error(`Error processing ${relPath}: ${err.message}`);
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          this.fileUtils.error(`Error processing ${relPath}: ${message}`);
           sessionStats.errors++;
         }
       }
@@ -143,9 +149,10 @@ export class SyncEngine {
             try {
               this.fileUtils.deleteFile(destAbs);
               sessionStats.deleted++;
-            } catch (err: any) {
+            } catch (err: unknown) {
+              const message = err instanceof Error ? err.message : String(err);
               this.fileUtils.error(
-                `Failed to delete ${relPath}: ${err.message}`
+                `Failed to delete ${relPath}: ${message}`
               );
               sessionStats.errors++;
             }
@@ -166,8 +173,9 @@ export class SyncEngine {
       this.fileUtils.info(
         `Sync complete. Copied: ${sessionStats.copied}, Skipped: ${sessionStats.skipped}, Conflicts: ${sessionStats.conflicts}, Deleted: ${sessionStats.deleted}, Errors: ${sessionStats.errors}`
       );
-    } catch (err: any) {
-      this.fileUtils.error(`Sync failed: ${err.message}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.fileUtils.error(`Sync failed: ${message}`);
       this.setStatus("error");
       this.stats.errors++;
     } finally {
@@ -240,8 +248,9 @@ export class SyncEngine {
             await this.fileUtils.copyFile(srcAbs, destAbs);
             sessionStats.copied++;
           }
-        } catch (err: any) {
-          this.fileUtils.error(`Error pulling ${relPath}: ${err.message}`);
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          this.fileUtils.error(`Error pulling ${relPath}: ${message}`);
           sessionStats.errors++;
         }
       }
@@ -256,8 +265,9 @@ export class SyncEngine {
       this.fileUtils.info(
         `Pull complete. Copied: ${sessionStats.copied}, Skipped: ${sessionStats.skipped}, Conflicts: ${sessionStats.conflicts}`
       );
-    } catch (err: any) {
-      this.fileUtils.error(`Pull failed: ${err.message}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.fileUtils.error(`Pull failed: ${message}`);
       this.setStatus("error");
     } finally {
       this.running = false;

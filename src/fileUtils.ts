@@ -6,9 +6,14 @@ import { FileEntry, LogEntry } from "./types";
 export class FileUtils {
   private logs: LogEntry[] = [];
   private verbose: boolean = false;
+  private configDir: string = ".obsidian";
 
   setVerbose(v: boolean) {
     this.verbose = v;
+  }
+
+  setConfigDir(dir: string) {
+    this.configDir = dir;
   }
 
   getLogs(): LogEntry[] {
@@ -30,7 +35,7 @@ export class FileUtils {
     const prefix = `[iCloud Mirror] [${level.toUpperCase()}]`;
     if (level === "error") console.error(prefix, message);
     else if (level === "warn") console.warn(prefix, message);
-    else console.log(prefix, message);
+    else console.debug(prefix, message);
   }
 
   info(msg: string) { this.log("info", msg); }
@@ -106,8 +111,8 @@ export class FileUtils {
         const relPath = rel ? `${rel}/${entry.name}` : entry.name;
         const absPath = path.join(current, entry.name);
 
-        // Skip .obsidian if not configured
-        if (!syncObsidian && (entry.name === ".obsidian" || relPath.startsWith(".obsidian/"))) {
+        // Skip config folder if not configured
+        if (!syncObsidian && (entry.name === this.configDir || relPath.startsWith(this.configDir + "/"))) {
           continue;
         }
 

@@ -1,7 +1,7 @@
-import { App, Modal, Setting } from "obsidian";
+import { App, Modal } from "obsidian";
 import { SyncEngine } from "./syncEngine";
 import { FileUtils } from "./fileUtils";
-import { SyncStatus, SyncStats } from "./types";
+import { SyncStatus } from "./types";
 
 export class SyncStatusModal extends Modal {
   private refreshInterval: number | null = null;
@@ -32,7 +32,7 @@ export class SyncStatusModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
-    contentEl.createEl("h2", { text: "iCloud Mirror — Status" });
+    contentEl.createEl("h2", { text: "iCloud Mirror — status" });
 
     const status = this.syncEngine.getStatus();
     const stats = this.syncEngine.getStats();
@@ -42,52 +42,38 @@ export class SyncStatusModal extends Modal {
       cls: "icm-status-badge",
       text: this.statusLabel(status),
     });
-    badge.style.cssText = `
-      display: inline-block;
-      padding: 4px 14px;
-      border-radius: 20px;
-      font-weight: 600;
-      font-size: 14px;
-      margin-bottom: 16px;
-      background: ${this.statusColor(status)};
-      color: white;
-    `;
+    badge.setCssProps({
+      "background-color": this.statusColor(status),
+    });
 
     // Stats grid
-    const grid = contentEl.createEl("div");
-    grid.style.cssText =
-      "display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px;";
+    const grid = contentEl.createEl("div", { cls: "icm-stats-grid" });
 
-    this.statBox(grid, "Last Sync", this.formatDate(stats.lastSync));
-    this.statBox(grid, "Files Copied", String(stats.filesCopied));
-    this.statBox(grid, "Files Skipped", String(stats.filesSkipped));
+    this.statBox(grid, "Last sync", this.formatDate(stats.lastSync));
+    this.statBox(grid, "Files copied", String(stats.filesCopied));
+    this.statBox(grid, "Files skipped", String(stats.filesSkipped));
     this.statBox(grid, "Conflicts", String(stats.conflictsDetected));
     this.statBox(grid, "Deletions", String(stats.filesDeleted));
     this.statBox(grid, "Errors", String(stats.errors));
 
     // Action buttons
-    const btnRow = contentEl.createEl("div");
-    btnRow.style.cssText = "display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;";
+    const btnRow = contentEl.createEl("div", { cls: "icm-btn-row" });
 
-    const syncBtn = btnRow.createEl("button", { text: "⬆ Sync Now (Local → iCloud)" });
-    syncBtn.style.cssText = "padding: 6px 14px; cursor: pointer;";
+    const syncBtn = btnRow.createEl("button", { text: "⬆ Sync now (local → iCloud)", cls: "icm-btn" });
     syncBtn.onclick = () => {
       this.onSyncNow();
       this.render();
     };
 
-    const pullBtn = btnRow.createEl("button", { text: "⬇ Pull from iCloud" });
-    pullBtn.style.cssText = "padding: 6px 14px; cursor: pointer;";
+    const pullBtn = btnRow.createEl("button", { text: "⬇ Pull from iCloud", cls: "icm-btn" });
     pullBtn.onclick = () => {
       this.onPullFromCloud();
       this.render();
     };
 
     // Logs
-    contentEl.createEl("h3", { text: "Recent Logs" });
-    const logContainer = contentEl.createEl("div");
-    logContainer.style.cssText =
-      "background: var(--background-secondary); border-radius: 6px; padding: 10px; max-height: 250px; overflow-y: auto; font-family: monospace; font-size: 12px;";
+    contentEl.createEl("h3", { text: "Recent logs" });
+    const logContainer = contentEl.createEl("div", { cls: "icm-log-container" });
 
     const logs = this.fileUtils.getLogs().slice(-60).reverse();
     if (logs.length === 0) {
@@ -97,18 +83,14 @@ export class SyncStatusModal extends Modal {
       });
     }
     for (const entry of logs) {
-      const row = logContainer.createEl("div");
-      row.style.cssText = `
-        padding: 2px 0;
-        color: ${this.logColor(entry.level)};
-        border-bottom: 1px solid var(--background-modifier-border);
-      `;
+      const row = logContainer.createEl("div", { cls: "icm-log-row" });
+      const colorClass = `icm-log-${entry.level}`;
+      row.addClass(colorClass);
       const ts = entry.timestamp.toLocaleTimeString();
       row.textContent = `[${ts}] ${entry.level.toUpperCase()} — ${entry.message}`;
     }
 
-    const clearBtn = contentEl.createEl("button", { text: "Clear Logs" });
-    clearBtn.style.cssText = "margin-top: 8px; padding: 4px 10px; cursor: pointer;";
+    const clearBtn = contentEl.createEl("button", { text: "Clear logs", cls: "icm-btn icm-btn-sm" });
     clearBtn.onclick = () => {
       this.fileUtils.clearLogs();
       this.render();
@@ -116,13 +98,9 @@ export class SyncStatusModal extends Modal {
   }
 
   private statBox(parent: HTMLElement, label: string, value: string) {
-    const box = parent.createEl("div");
-    box.style.cssText =
-      "background: var(--background-secondary); border-radius: 6px; padding: 10px; text-align: center;";
-    box.createEl("div", { text: value }).style.cssText =
-      "font-size: 20px; font-weight: 700;";
-    box.createEl("div", { text: label }).style.cssText =
-      "font-size: 11px; color: var(--text-muted); margin-top: 2px;";
+    const box = parent.createEl("div", { cls: "icm-stat-box" });
+    box.createEl("div", { text: value, cls: "icm-stat-value" });
+    box.createEl("div", { text: label, cls: "icm-stat-label" });
   }
 
   private statusLabel(status: SyncStatus): string {
@@ -130,7 +108,7 @@ export class SyncStatusModal extends Modal {
       idle: "⏸ Idle",
       syncing: "🔄 Syncing…",
       success: "✅ Success",
-      conflict: "⚠️ Conflict Detected",
+      conflict: "⚠️ Conflict detected",
       error: "❌ Error",
       disabled: "⛔ Disabled",
     };

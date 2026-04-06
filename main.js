@@ -76,9 +76,13 @@ var FileUtils = class {
   constructor() {
     this.logs = [];
     this.verbose = false;
+    this.configDir = ".obsidian";
   }
   setVerbose(v) {
     this.verbose = v;
+  }
+  setConfigDir(dir) {
+    this.configDir = dir;
   }
   getLogs() {
     return this.logs;
@@ -99,7 +103,7 @@ var FileUtils = class {
     else if (level === "warn")
       console.warn(prefix, message);
     else
-      console.log(prefix, message);
+      console.debug(prefix, message);
   }
   info(msg) {
     this.log("info", msg);
@@ -168,7 +172,7 @@ var FileUtils = class {
       for (const entry of entries) {
         const relPath = rel ? `${rel}/${entry.name}` : entry.name;
         const absPath = path.join(current, entry.name);
-        if (!syncObsidian && (entry.name === ".obsidian" || relPath.startsWith(".obsidian/"))) {
+        if (!syncObsidian && (entry.name === this.configDir || relPath.startsWith(this.configDir + "/"))) {
           continue;
         }
         if (entry.isDirectory()) {
@@ -322,6 +326,7 @@ var SyncEngine = class {
     this.fileUtils = fileUtils;
     this.conflictResolver = conflictResolver;
     this.running = false;
+    this.configDir = ".obsidian";
     this.stats = {
       lastSync: null,
       filesCopied: 0,
@@ -332,6 +337,10 @@ var SyncEngine = class {
     };
     this.status = "idle";
     this.onStatusChange = null;
+  }
+  setConfigDir(dir) {
+    this.configDir = dir;
+    this.fileUtils.setConfigDir(dir);
   }
   setStatusCallback(cb) {
     this.onStatusChange = cb;
@@ -413,7 +422,8 @@ var SyncEngine = class {
             sessionStats.copied++;
           }
         } catch (err) {
-          this.fileUtils.error(`Error processing ${relPath}: ${err.message}`);
+          const message = err instanceof Error ? err.message : String(err);
+          this.fileUtils.error(`Error processing ${relPath}: ${message}`);
           sessionStats.errors++;
         }
       }
@@ -433,8 +443,9 @@ var SyncEngine = class {
               this.fileUtils.deleteFile(destAbs);
               sessionStats.deleted++;
             } catch (err) {
+              const message = err instanceof Error ? err.message : String(err);
               this.fileUtils.error(
-                `Failed to delete ${relPath}: ${err.message}`
+                `Failed to delete ${relPath}: ${message}`
               );
               sessionStats.errors++;
             }
@@ -453,7 +464,8 @@ var SyncEngine = class {
         `Sync complete. Copied: ${sessionStats.copied}, Skipped: ${sessionStats.skipped}, Conflicts: ${sessionStats.conflicts}, Deleted: ${sessionStats.deleted}, Errors: ${sessionStats.errors}`
       );
     } catch (err) {
-      this.fileUtils.error(`Sync failed: ${err.message}`);
+      const message = err instanceof Error ? err.message : String(err);
+      this.fileUtils.error(`Sync failed: ${message}`);
       this.setStatus("error");
       this.stats.errors++;
     } finally {
@@ -518,7 +530,8 @@ var SyncEngine = class {
             sessionStats.copied++;
           }
         } catch (err) {
-          this.fileUtils.error(`Error pulling ${relPath}: ${err.message}`);
+          const message = err instanceof Error ? err.message : String(err);
+          this.fileUtils.error(`Error pulling ${relPath}: ${message}`);
           sessionStats.errors++;
         }
       }
@@ -532,7 +545,8 @@ var SyncEngine = class {
         `Pull complete. Copied: ${sessionStats.copied}, Skipped: ${sessionStats.skipped}, Conflicts: ${sessionStats.conflicts}`
       );
     } catch (err) {
-      this.fileUtils.error(`Pull failed: ${err.message}`);
+      const message = err instanceof Error ? err.message : String(err);
+      this.fileUtils.error(`Pull failed: ${message}`);
       this.setStatus("error");
     } finally {
       this.running = false;
@@ -560,8 +574,8 @@ var ICloudMirrorSettingTab = class extends import_obsidian.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "iCloud Mirror \u2014 Settings" });
-    containerEl.createEl("h3", { text: "\u{1F4C1} Paths" });
+    containerEl.createEl("h2", { text: "iCloud Mirror \u2014 settings" });
+    new import_obsidian.Setting(containerEl).setName("\u{1F4C1} Paths").setHeading();
     new import_obsidian.Setting(containerEl).setName("Local vault path").setDesc(
       "Absolute path to your local working vault (e.g. D:\\ObsidianVault). Leave blank to use the current vault path."
     ).addText(
@@ -578,7 +592,7 @@ var ICloudMirrorSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.saveSettings();
       })
     );
-    containerEl.createEl("h3", { text: "\u26A1 Sync Triggers" });
+    new import_obsidian.Setting(containerEl).setName("\u26A1 Sync triggers").setHeading();
     new import_obsidian.Setting(containerEl).setName("Sync on file save").setDesc("Sync after a note is saved (with debounce delay).").addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.syncOnSave).onChange(async (value) => {
         this.plugin.settings.syncOnSave = value;
@@ -612,7 +626,7 @@ var ICloudMirrorSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.saveSettings();
       })
     );
-    containerEl.createEl("h3", { text: "\u{1F6AB} Exclusions" });
+    new import_obsidian.Setting(containerEl).setName("\u{1F6AB} Exclusions").setHeading();
     new import_obsidian.Setting(containerEl).setName("Excluded folders").setDesc(
       "One per line. Relative paths like .trash, node_modules, .git"
     ).addTextArea((text) => {
@@ -621,7 +635,6 @@ var ICloudMirrorSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.saveSettings();
       });
       text.inputEl.rows = 5;
-      text.inputEl.style.width = "100%";
     });
     new import_obsidian.Setting(containerEl).setName("Excluded files").setDesc(
       "One per line. Supports glob patterns like *.tmp or exact paths like .obsidian/workspace.json"
@@ -633,7 +646,6 @@ var ICloudMirrorSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.saveSettings();
       });
       text.inputEl.rows = 5;
-      text.inputEl.style.width = "100%";
     });
     new import_obsidian.Setting(containerEl).setName("Sync .obsidian folder").setDesc(
       "Include the .obsidian config folder in sync. Recommended: OFF \u2014 themes/plugins may be incompatible between desktop and iPhone."
@@ -643,8 +655,8 @@ var ICloudMirrorSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.saveSettings();
       })
     );
-    containerEl.createEl("h3", { text: "\u{1F6E1}\uFE0F Safety" });
-    new import_obsidian.Setting(containerEl).setName("Safe Mode").setDesc(
+    new import_obsidian.Setting(containerEl).setName("\u{1F6E1}\uFE0F Safety").setHeading();
+    new import_obsidian.Setting(containerEl).setName("Safe mode").setDesc(
       "Only adds/updates files. Never deletes from the mirror. Strongly recommended."
     ).addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.safeMode).onChange(async (value) => {
@@ -652,7 +664,7 @@ var ICloudMirrorSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.saveSettings();
       })
     );
-    new import_obsidian.Setting(containerEl).setName("Mirror Mode (deletes in mirror)").setDesc(
+    new import_obsidian.Setting(containerEl).setName("Mirror mode (deletes in mirror)").setDesc(
       "\u26A0\uFE0F When enabled AND Safe Mode is OFF, deletions in your local vault are mirrored to iCloud. Use with caution."
     ).addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.mirrorMode).onChange(async (value) => {
@@ -668,14 +680,14 @@ var ICloudMirrorSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.saveSettings();
       })
     );
-    containerEl.createEl("h3", { text: "\u{1FAB5} Logging" });
+    new import_obsidian.Setting(containerEl).setName("\u{1FAB5} Logging").setHeading();
     new import_obsidian.Setting(containerEl).setName("Verbose logs").setDesc("Log every file checked (not just copies). Useful for debugging.").addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.verboseLogs).onChange(async (value) => {
         this.plugin.settings.verboseLogs = value;
         await this.plugin.saveSettings();
       })
     );
-    containerEl.createEl("h3", { text: "\u{1F527} Manual Actions" });
+    new import_obsidian.Setting(containerEl).setName("\u{1F527} Manual actions").setHeading();
     new import_obsidian.Setting(containerEl).setName("Reset session stats").setDesc("Reset the file/conflict counters.").addButton(
       (btn) => btn.setButtonText("Reset").onClick(() => {
         this.plugin.syncEngine.resetSessionStats();
@@ -708,48 +720,36 @@ var SyncStatusModal = class extends import_obsidian2.Modal {
   render() {
     const { contentEl } = this;
     contentEl.empty();
-    contentEl.createEl("h2", { text: "iCloud Mirror \u2014 Status" });
+    contentEl.createEl("h2", { text: "iCloud Mirror \u2014 status" });
     const status = this.syncEngine.getStatus();
     const stats = this.syncEngine.getStats();
     const badge = contentEl.createEl("div", {
       cls: "icm-status-badge",
       text: this.statusLabel(status)
     });
-    badge.style.cssText = `
-      display: inline-block;
-      padding: 4px 14px;
-      border-radius: 20px;
-      font-weight: 600;
-      font-size: 14px;
-      margin-bottom: 16px;
-      background: ${this.statusColor(status)};
-      color: white;
-    `;
-    const grid = contentEl.createEl("div");
-    grid.style.cssText = "display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px;";
-    this.statBox(grid, "Last Sync", this.formatDate(stats.lastSync));
-    this.statBox(grid, "Files Copied", String(stats.filesCopied));
-    this.statBox(grid, "Files Skipped", String(stats.filesSkipped));
+    badge.setCssProps({
+      "background-color": this.statusColor(status)
+    });
+    const grid = contentEl.createEl("div", { cls: "icm-stats-grid" });
+    this.statBox(grid, "Last sync", this.formatDate(stats.lastSync));
+    this.statBox(grid, "Files copied", String(stats.filesCopied));
+    this.statBox(grid, "Files skipped", String(stats.filesSkipped));
     this.statBox(grid, "Conflicts", String(stats.conflictsDetected));
     this.statBox(grid, "Deletions", String(stats.filesDeleted));
     this.statBox(grid, "Errors", String(stats.errors));
-    const btnRow = contentEl.createEl("div");
-    btnRow.style.cssText = "display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;";
-    const syncBtn = btnRow.createEl("button", { text: "\u2B06 Sync Now (Local \u2192 iCloud)" });
-    syncBtn.style.cssText = "padding: 6px 14px; cursor: pointer;";
+    const btnRow = contentEl.createEl("div", { cls: "icm-btn-row" });
+    const syncBtn = btnRow.createEl("button", { text: "\u2B06 Sync now (local \u2192 iCloud)", cls: "icm-btn" });
     syncBtn.onclick = () => {
       this.onSyncNow();
       this.render();
     };
-    const pullBtn = btnRow.createEl("button", { text: "\u2B07 Pull from iCloud" });
-    pullBtn.style.cssText = "padding: 6px 14px; cursor: pointer;";
+    const pullBtn = btnRow.createEl("button", { text: "\u2B07 Pull from iCloud", cls: "icm-btn" });
     pullBtn.onclick = () => {
       this.onPullFromCloud();
       this.render();
     };
-    contentEl.createEl("h3", { text: "Recent Logs" });
-    const logContainer = contentEl.createEl("div");
-    logContainer.style.cssText = "background: var(--background-secondary); border-radius: 6px; padding: 10px; max-height: 250px; overflow-y: auto; font-family: monospace; font-size: 12px;";
+    contentEl.createEl("h3", { text: "Recent logs" });
+    const logContainer = contentEl.createEl("div", { cls: "icm-log-container" });
     const logs = this.fileUtils.getLogs().slice(-60).reverse();
     if (logs.length === 0) {
       logContainer.createEl("div", {
@@ -758,27 +758,22 @@ var SyncStatusModal = class extends import_obsidian2.Modal {
       });
     }
     for (const entry of logs) {
-      const row = logContainer.createEl("div");
-      row.style.cssText = `
-        padding: 2px 0;
-        color: ${this.logColor(entry.level)};
-        border-bottom: 1px solid var(--background-modifier-border);
-      `;
+      const row = logContainer.createEl("div", { cls: "icm-log-row" });
+      const colorClass = `icm-log-${entry.level}`;
+      row.addClass(colorClass);
       const ts = entry.timestamp.toLocaleTimeString();
       row.textContent = `[${ts}] ${entry.level.toUpperCase()} \u2014 ${entry.message}`;
     }
-    const clearBtn = contentEl.createEl("button", { text: "Clear Logs" });
-    clearBtn.style.cssText = "margin-top: 8px; padding: 4px 10px; cursor: pointer;";
+    const clearBtn = contentEl.createEl("button", { text: "Clear logs", cls: "icm-btn icm-btn-sm" });
     clearBtn.onclick = () => {
       this.fileUtils.clearLogs();
       this.render();
     };
   }
   statBox(parent, label, value) {
-    const box = parent.createEl("div");
-    box.style.cssText = "background: var(--background-secondary); border-radius: 6px; padding: 10px; text-align: center;";
-    box.createEl("div", { text: value }).style.cssText = "font-size: 20px; font-weight: 700;";
-    box.createEl("div", { text: label }).style.cssText = "font-size: 11px; color: var(--text-muted); margin-top: 2px;";
+    const box = parent.createEl("div", { cls: "icm-stat-box" });
+    box.createEl("div", { text: value, cls: "icm-stat-value" });
+    box.createEl("div", { text: label, cls: "icm-stat-label" });
   }
   statusLabel(status) {
     var _a;
@@ -786,7 +781,7 @@ var SyncStatusModal = class extends import_obsidian2.Modal {
       idle: "\u23F8 Idle",
       syncing: "\u{1F504} Syncing\u2026",
       success: "\u2705 Success",
-      conflict: "\u26A0\uFE0F Conflict Detected",
+      conflict: "\u26A0\uFE0F Conflict detected",
       error: "\u274C Error",
       disabled: "\u26D4 Disabled"
     };

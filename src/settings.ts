@@ -13,10 +13,10 @@ export class ICloudMirrorSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl("h2", { text: "iCloud Mirror — Settings" });
+    containerEl.createEl("h2", { text: "iCloud Mirror — settings" });
 
     // ── Paths ─────────────────────────────────────────────────────────────
-    containerEl.createEl("h3", { text: "📁 Paths" });
+    new Setting(containerEl).setName("📁 Paths").setHeading();
 
     new Setting(containerEl)
       .setName("Local vault path")
@@ -49,7 +49,7 @@ export class ICloudMirrorSettingTab extends PluginSettingTab {
       );
 
     // ── Sync triggers ──────────────────────────────────────────────────────
-    containerEl.createEl("h3", { text: "⚡ Sync Triggers" });
+    new Setting(containerEl).setName("⚡ Sync triggers").setHeading();
 
     new Setting(containerEl)
       .setName("Sync on file save")
@@ -119,7 +119,7 @@ export class ICloudMirrorSettingTab extends PluginSettingTab {
       );
 
     // ── Exclusions ─────────────────────────────────────────────────────────
-    containerEl.createEl("h3", { text: "🚫 Exclusions" });
+    new Setting(containerEl).setName("🚫 Exclusions").setHeading();
 
     new Setting(containerEl)
       .setName("Excluded folders")
@@ -138,7 +138,6 @@ export class ICloudMirrorSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           });
         text.inputEl.rows = 5;
-        text.inputEl.style.width = "100%";
       });
 
     new Setting(containerEl)
@@ -160,7 +159,6 @@ export class ICloudMirrorSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           });
         text.inputEl.rows = 5;
-        text.inputEl.style.width = "100%";
       });
 
     new Setting(containerEl)
@@ -178,10 +176,10 @@ export class ICloudMirrorSettingTab extends PluginSettingTab {
       );
 
     // ── Safety ─────────────────────────────────────────────────────────────
-    containerEl.createEl("h3", { text: "🛡️ Safety" });
+    new Setting(containerEl).setName("🛡️ Safety").setHeading();
 
     new Setting(containerEl)
-      .setName("Safe Mode")
+      .setName("Safe mode")
       .setDesc(
         "Only adds/updates files. Never deletes from the mirror. Strongly recommended."
       )
@@ -195,7 +193,7 @@ export class ICloudMirrorSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Mirror Mode (deletes in mirror)")
+      .setName("Mirror mode (deletes in mirror)")
       .setDesc(
         "⚠️ When enabled AND Safe Mode is OFF, deletions in your local vault are mirrored to iCloud. Use with caution."
       )
@@ -217,7 +215,7 @@ export class ICloudMirrorSettingTab extends PluginSettingTab {
       );
 
     // ── Logging ────────────────────────────────────────────────────────────
-    containerEl.createEl("h3", { text: "🪵 Logging" });
+    new Setting(containerEl).setName("🪵 Logging").setHeading();
 
     new Setting(containerEl)
       .setName("Verbose logs")
@@ -232,7 +230,7 @@ export class ICloudMirrorSettingTab extends PluginSettingTab {
       );
 
     // ── Actions ────────────────────────────────────────────────────────────
-    containerEl.createEl("h3", { text: "🔧 Manual Actions" });
+    new Setting(containerEl).setName("🔧 Manual actions").setHeading();
 
     new Setting(containerEl)
       .setName("Reset session stats")
