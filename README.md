@@ -1,110 +1,114 @@
-# iCloud Mirror — Obsidian Plugin
+# iCloud Mirror
 
-> **Mirror your local Obsidian vault to iCloud Drive automatically, safely and conflict-free.**
+> Work in a stable local vault. Let your iPhone read a clean copy in iCloud — automatically, safely, and without conflicts.
 
-Works on **Windows 11 + Obsidian Desktop** only. Your iPhone reads the mirrored copy inside iCloud; you work in a stable local folder.
-
----
-
-## Why this exists
-
-Working with a vault **directly inside iCloud Drive on Windows** causes:
-- Duplicate files (e.g. `note.md` and `note 2.md`)
-- Files disappearing while writing (iCloud sync race conditions)
-- Workspace/plugin corruption
-
-This plugin lets you **work locally**, then **push a clean copy to iCloud** — at the right moment, not constantly.
+![Platform](https://img.shields.io/badge/platform-Windows%2011-blue)
+![Obsidian](https://img.shields.io/badge/Obsidian-1.0%2B-7c3aed)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Desktop Only](https://img.shields.io/badge/desktop-only-orange)
 
 ---
 
-## Installation (local/manual)
+## The problem
 
-### Prerequisites
-- Node.js 18+ installed
+Working with an Obsidian vault **directly inside iCloud Drive on Windows** is unstable:
+
+- Notes duplicate themselves (`note.md` → `note 2.md`)
+- Files disappear mid-write due to sync race conditions
+- Workspace and plugin configs get corrupted
+
+**iCloud Mirror solves this** by letting you work in a fast, stable local folder — and automatically pushing a clean copy to iCloud only at safe moments (on save, on blur, on close).
+
+Your iPhone reads the mirrored copy. Your desktop never touches iCloud directly.
+
+```
+D:\ObsidianVault          →  C:\Users\You\iCloudDrive\ObsidianVault_iPhone
+  (you work here)                  (iPhone reads here)
+```
+
+---
+
+## Features
+
+- **Auto-sync** on file save, window blur, and Obsidian close
+- **Debounced sync** — waits until you stop writing before copying
+- **Conflict detection** using size, modification time, and MD5 hash
+- **Automatic conflict backups** — nothing is ever silently overwritten
+- **Safe Mode** — only adds/updates, never deletes from mirror
+- **Mirror Mode** — optionally propagates deletions (manual opt-in)
+- **Pull from iCloud** — manually bring changes from iPhone back to desktop
+- **Status panel** with live logs, stats, and action buttons
+- **Configurable exclusions** — folders, files, glob patterns
+- No external servers, no cloud APIs, no subscriptions
+
+---
+
+## Installation
+
+### Requirements
+
+- Windows 11
 - Obsidian 1.0+
-- A vault open in Obsidian
+- Node.js 18+ (only needed to build from source)
 
-### Step 1 — Clone / download the plugin
+### Option A — From the Obsidian plugin directory
 
-```bash
-# Option A: git clone
-git clone https://github.com/AngelCLA/obsidian-icloud-mirror.git
-cd obsidian-icloud-mirror
+1. Open Obsidian → **Settings → Community plugins → Browse**
+2. Search for **iCloud Mirror**
+3. Click **Install** → **Enable**
 
-# Option B: download ZIP, extract, cd into folder
-```
-
-### Step 2 — Install dependencies
+### Option B — Manual (from source)
 
 ```bash
+# 1. Clone the repo
+git clone https://github.com/AngelCLA/icloud-mirror.git
+cd icloud-mirror
+
+# 2. Install dependencies
 npm install
-```
 
-### Step 3 — Build the plugin
-
-```bash
-# One-time production build
+# 3. Build
 npm run build
-
-# OR: watch mode during development
-npm run dev
 ```
 
-This generates `main.js` in the root folder.
-
-### Step 4 — Copy to your vault's plugins folder
-
-```
-YourVault/.obsidian/plugins/obsidian-icloud-mirror/
-  ├── main.js        ← compiled output
-  ├── manifest.json
-  └── styles.css     ← (optional, create empty if needed)
-```
-
-In PowerShell:
+Then copy the output to your vault's plugin folder:
 
 ```powershell
-# Replace paths as needed
-$dest = "D:\ObsidianVault\.obsidian\plugins\obsidian-icloud-mirror"
+$dest = "D:\ObsidianVault\.obsidian\plugins\icloud-mirror"
 New-Item -ItemType Directory -Force -Path $dest
-Copy-Item main.js, manifest.json -Destination $dest
+Copy-Item main.js, manifest.json, styles.css -Destination $dest
 ```
 
-### Step 5 — Enable in Obsidian
-
-1. Open Obsidian → **Settings → Community plugins**
-2. Turn off **Safe mode** (if prompted)
-3. Click **Reload plugins**
-4. Enable **iCloud Mirror**
+Reload plugins in Obsidian and enable **iCloud Mirror**.
 
 ---
 
-## Configuration
+## Setup
 
-Go to **Settings → iCloud Mirror**:
+Open **Settings → iCloud Mirror** and configure:
 
-| Setting | Recommended value |
+| Setting | Recommended |
 |---|---|
-| Local vault path | `D:\ObsidianVault` (or leave blank to use current vault) |
+| Local vault path | `D:\ObsidianVault` (leave blank to use current vault) |
 | iCloud mirror path | `C:\Users\You\iCloudDrive\ObsidianVault_iPhone` |
 | Sync on save | ✅ ON |
 | Sync on blur | ✅ ON |
 | Sync on close | ✅ ON |
 | Debounce delay | 5–10 seconds |
-| Safe Mode | ✅ ON (always, unless you know what you're doing) |
-| Mirror Mode | ❌ OFF (only enable if you want deletions to propagate) |
-| Sync .obsidian folder | ❌ OFF (themes and plugins differ between desktop and iPhone) |
+| Safe Mode | ✅ ON |
+| Mirror Mode | ❌ OFF (unless you need deletions to propagate) |
+| Sync .obsidian folder | ❌ OFF |
 
-### Recommended excluded folders
+### Recommended exclusions
 
+**Folders:**
 ```
 .trash
 node_modules
 .git
 ```
 
-### Recommended excluded files
-
+**Files:**
 ```
 .obsidian/workspace.json
 .obsidian/workspaces.json
@@ -116,126 +120,122 @@ desktop.ini
 *.lock
 ```
 
+> **Why exclude `.obsidian/`?** Desktop plugins, themes, and workspace state are incompatible with iPhone. Syncing them causes conflicts and broken layouts on mobile. Only your notes and attachments need to reach iPhone.
+
 ---
 
 ## How it works
 
-### Change detection
+### Sync triggers
 
-The plugin hooks into Obsidian's vault events:
-- `vault.on('modify')` — file modified
-- `vault.on('create')` — file created
-- `vault.on('delete')` — file deleted
-- `vault.on('rename')` — file renamed
-- `window.blur` — window loses focus (switch app)
-- `plugin.onunload()` — Obsidian is closing
+| Event | How it's detected |
+|---|---|
+| File saved or modified | `vault.on('modify')` |
+| File created | `vault.on('create')` |
+| File deleted or renamed | `vault.on('delete')`, `vault.on('rename')` |
+| Obsidian loses focus | `window.blur` |
+| Obsidian closes | `plugin.onunload()` |
 
-All save/modify events are **debounced** (default: 5 seconds) so syncing doesn't trigger on every keystroke.
+All modify/save events pass through a **debounce** (default: 5 seconds). If you're actively writing, the timer resets on each keystroke — sync only fires after you pause.
 
 ### Conflict resolution
 
-For each file, the engine:
-1. **Checks if dest exists** → if not, copy directly
-2. **Compares size** → if different, check further
-3. **Compares mtime** (2-second tolerance for FAT/iCloud rounding)
-4. **Hashes both files** (MD5) if sizes match but mtimes differ
-5. If dest is **newer than src** → **conflict detected**:
-   - A backup is created: `note-conflict-2026-04-05-22-30.md`
-   - Then src is copied over
-   - Nothing is silently lost
+For every file, the engine runs this check before copying:
+
+1. Destination doesn't exist → **copy directly**
+2. Files have different sizes → **check mtime**
+3. Destination is newer than source (by more than 2s) → **conflict**
+4. Same size, different mtime → **compare MD5 hash**
+5. Hashes match → **skip** (already identical)
+
+When a conflict is detected, a timestamped backup is created before anything is overwritten:
+
+```
+note.md  →  note-conflict-2026-04-05-22-30.md
+```
+
+Nothing is ever silently lost.
 
 ### Safe Mode vs Mirror Mode
 
-| | Safe Mode | Mirror Mode |
+|  | Safe Mode | Mirror Mode |
 |---|---|---|
 | Copies new/modified files | ✅ | ✅ |
 | Never deletes from mirror | ✅ | ❌ |
-| Mirrors deletions | ❌ | ✅ (only when Safe Mode OFF) |
+| Mirrors deletions | ❌ | ✅ (requires Safe Mode OFF) |
 
-Mirror Mode must be explicitly enabled **and** Safe Mode must be OFF.
-
----
-
-## Commands
-
-| Command | Action |
-|---|---|
-| `iCloud Mirror: Sync Now` | Push local → iCloud immediately |
-| `iCloud Mirror: Pull from iCloud` | Pull iCloud → local (manual) |
-| `iCloud Mirror: Open Status Panel` | Open the status/logs modal |
-
-The ribbon icon (cloud with arrow) also triggers Sync Now.
-
----
-
-## Status Panel
-
-Open via command palette or ribbon. Shows:
-- Current status (Idle / Syncing / Success / Conflict / Error)
-- Files copied, skipped, conflicts, errors
-- Last sync time
-- Scrollable log viewer
-- Buttons: Sync Now, Pull from iCloud, Clear Logs
-
----
-
-## What NOT to sync
-
-| Folder/File | Why |
-|---|---|
-| `.obsidian/workspace.json` | Tracks open tabs — irrelevant on iPhone |
-| `.obsidian/workspaces.json` | Same |
-| `.obsidian/cache` | Large, regenerated automatically |
-| `.obsidian/plugins/` | iPhone uses mobile plugins, not desktop |
-| `.obsidian/themes/` | Desktop themes don't apply on iPhone |
-| `node_modules/` | Dev artifacts, not vault content |
-| `.trash/` | Obsidian trash bin |
-| `*.tmp` / `*.lock` | Temporary files |
-
-If you want your iPhone to have your **custom CSS snippets**, you can selectively include `.obsidian/snippets/` by removing it from the exclusion list.
+Mirror Mode must be explicitly enabled **and** Safe Mode must be turned OFF. This double opt-in prevents accidental data loss.
 
 ---
 
 ## iPhone setup
 
 1. On your iPhone, open **Obsidian → Open vault from iCloud**
-2. Select the mirrored folder (e.g. `ObsidianVault_iPhone` inside iCloud Drive)
-3. That's it — every time you sync from desktop, iPhone sees the updated notes
+2. Select the mirrored folder (e.g. `ObsidianVault_iPhone`)
+3. Done — every desktop sync updates what your iPhone sees
 
-The iPhone only **reads** from that folder. It can write too, but if you do:
-- Use **Pull from iCloud** before editing on iPhone and returning to desktop
-- Or enable **Mirror Mode** with care
+If you edit notes on iPhone and want to bring them back:
+- Use the **Pull from iCloud** button before resuming on desktop
+- Or enable **Mirror Mode** with care (and keep backups)
+
+---
+
+## Status panel
+
+Open via the ribbon icon or **Command palette → iCloud Mirror: Open Status Panel**.
+
+Shows:
+- Current status: Idle / Syncing / Success / Conflict / Error
+- Files copied, skipped, conflicts detected, errors
+- Time of last sync
+- Scrollable real-time log
+- Buttons: **Sync Now**, **Pull from iCloud**, **Clear Logs**
+
+---
+
+## Commands
+
+| Command | Description |
+|---|---|
+| `iCloud Mirror: Sync Now` | Push local → iCloud immediately |
+| `iCloud Mirror: Pull from iCloud` | Pull iCloud → local (manual) |
+| `iCloud Mirror: Open Status Panel` | Open status and log viewer |
 
 ---
 
 ## Troubleshooting
 
-**Sync does nothing after save**
-→ Check paths in Settings. Local path must exist. Debounce delay may still be counting.
+**Sync does nothing after saving**
+Check that both paths are set in Settings and that the local path exists. The debounce delay may still be counting down.
 
 **"Sync not ready" warning**
-→ Either `localVaultPath` or `icloudMirrorPath` is empty or doesn't exist.
+Either `localVaultPath` or `icloudMirrorPath` is blank or points to a folder that doesn't exist.
 
-**Conflicts appear constantly**
-→ iCloud is modifying files on Windows (cloud sync). Stop iCloud from syncing the mirror path to the internet while working, or use Safe Mode.
+**Conflicts appear on every sync**
+iCloud for Windows may be modifying files in the mirror folder as it uploads them. Consider pausing iCloud sync while working, or keep Safe Mode on so conflicts are backed up rather than lost.
 
-**Plugin not showing in Obsidian**
-→ Make sure `manifest.json` is in the plugin folder alongside `main.js`.
+**Plugin doesn't appear in Obsidian**
+Make sure both `main.js` and `manifest.json` are inside the plugin folder, not in a subfolder.
 
 ---
 
-## Future improvements (roadmap ideas)
+## Roadmap
 
-- [ ] Dry-run mode: preview what would be copied without doing it
-- [ ] Checksum cache: persist hashes to avoid re-hashing on every sync
-- [ ] Incremental backup: keep last N versions of changed files
-- [ ] Toast notifications with sync summary
-- [ ] Conflict resolution UI: side-by-side diff viewer
-- [ ] Sync profile presets: work/personal/iphone
-- [ ] `.icmignore` file support (gitignore-style patterns)
+- [ ] `.icmignore` support (gitignore-style patterns per vault)
+- [ ] Dry-run mode — preview what would be synced without copying
+- [ ] Checksum cache — persist MD5s to disk for faster subsequent syncs
+- [ ] Incremental backup — keep last N versions of modified files
+- [ ] Conflict diff viewer — side-by-side comparison before resolving
+- [ ] Sync profiles — different mirror targets for different use cases
+
+---
+
+## Contributing
+
+Issues and PRs are welcome. If you find a bug or have a feature request, open an issue on GitHub.
 
 ---
 
 ## License
 
-MIT — use freely, modify as needed.
+MIT — free to use, modify, and distribute.
