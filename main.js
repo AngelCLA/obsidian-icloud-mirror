@@ -665,12 +665,12 @@ var ICloudMirrorSettingTab = class extends import_obsidian.PluginSettingTab {
       })
     );
     new import_obsidian.Setting(containerEl).setName("Mirror mode (deletes in mirror)").setDesc(
-      "\u26A0\uFE0F When enabled AND Safe Mode is OFF, deletions in your local vault are mirrored to iCloud. Use with caution."
+      "\u26A0\uFE0F When enabled and safe mode is off, deletions in your local vault are mirrored to iCloud. Use with caution."
     ).addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.mirrorMode).onChange(async (value) => {
         if (value && this.plugin.settings.safeMode) {
           new import_obsidian.Notice(
-            "Mirror Mode requires Safe Mode to be OFF. Disable Safe Mode first.",
+            "Mirror mode requires safe mode to be off. Disable safe mode first.",
             5e3
           );
           toggle.setValue(false);

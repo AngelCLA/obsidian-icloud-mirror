@@ -195,7 +195,7 @@ export class ICloudMirrorSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName("Mirror mode (deletes in mirror)")
       .setDesc(
-        "⚠️ When enabled AND Safe Mode is OFF, deletions in your local vault are mirrored to iCloud. Use with caution."
+        "⚠️ When enabled and safe mode is off, deletions in your local vault are mirrored to iCloud. Use with caution."
       )
       .addToggle((toggle) =>
         toggle
@@ -203,7 +203,7 @@ export class ICloudMirrorSettingTab extends PluginSettingTab {
           .onChange(async (value) => {
             if (value && this.plugin.settings.safeMode) {
               new Notice(
-                "Mirror Mode requires Safe Mode to be OFF. Disable Safe Mode first.",
+                "Mirror mode requires safe mode to be off. Disable safe mode first.",
                 5000
               );
               toggle.setValue(false);
