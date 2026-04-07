@@ -97,7 +97,7 @@ Open **Settings → iCloud Mirror** and configure:
 | Debounce delay | 5–10 seconds |
 | Safe Mode | ✅ ON |
 | Mirror Mode | ❌ OFF (unless you need deletions to propagate) |
-| Sync .obsidian folder | ❌ OFF |
+| Sync vault configuration folder | ❌ OFF |
 
 ### Recommended exclusions
 
@@ -110,9 +110,9 @@ node_modules
 
 **Files:**
 ```
-.obsidian/workspace.json
-.obsidian/workspaces.json
-.obsidian/cache
+workspace.json
+workspaces.json
+cache
 .DS_Store
 Thumbs.db
 desktop.ini
@@ -120,7 +120,7 @@ desktop.ini
 *.lock
 ```
 
-> **Why exclude `.obsidian/`?** Desktop plugins, themes, and workspace state are incompatible with iPhone. Syncing them causes conflicts and broken layouts on mobile. Only your notes and attachments need to reach iPhone.
+> **Why exclude the configuration folder?** Desktop plugins, themes, and workspace state are incompatible with iPhone. Syncing them causes conflicts and broken layouts on mobile. Only your notes and attachments need to reach iPhone.
 
 ---
 
