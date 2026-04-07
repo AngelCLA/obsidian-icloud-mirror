@@ -87,7 +87,7 @@ export default class ICloudMirrorPlugin extends Plugin {
     this.registerEvents();
     this.restartAutoSync();
 
-    new Notice("iCloud Mirror loaded ✓", 3000);
+    new Notice("iCloud mirror loaded ✓", 3000);
   }
 
   onunload() {

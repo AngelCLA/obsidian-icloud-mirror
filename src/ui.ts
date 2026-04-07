@@ -32,7 +32,7 @@ export class SyncStatusModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
-    contentEl.createEl("h2", { text: "iCloud Mirror — status" });
+    contentEl.createEl("h2", { text: "iCloud Mirror" });
 
     const status = this.syncEngine.getStatus();
     const stats = this.syncEngine.getStats();

@@ -574,7 +574,7 @@ var ICloudMirrorSettingTab = class extends import_obsidian.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    new import_obsidian.Setting(containerEl).setName("iCloud Mirror \u2014 settings").setHeading();
+    new import_obsidian.Setting(containerEl).setName("iCloud Mirror").setHeading();
     new import_obsidian.Setting(containerEl).setName("\u{1F4C1} Paths").setHeading();
     new import_obsidian.Setting(containerEl).setName("Local vault path").setDesc(
       "Absolute path to your local working vault (e.g. D:\\ObsidianVault). Leave blank to use the current vault path."
@@ -720,7 +720,7 @@ var SyncStatusModal = class extends import_obsidian2.Modal {
   render() {
     const { contentEl } = this;
     contentEl.empty();
-    contentEl.createEl("h2", { text: "iCloud Mirror \u2014 status" });
+    contentEl.createEl("h2", { text: "iCloud Mirror" });
     const status = this.syncEngine.getStatus();
     const stats = this.syncEngine.getStats();
     const badge = contentEl.createEl("div", {
@@ -884,7 +884,7 @@ var ICloudMirrorPlugin = class extends import_obsidian3.Plugin {
     this.addSettingTab(new ICloudMirrorSettingTab(this.app, this));
     this.registerEvents();
     this.restartAutoSync();
-    new import_obsidian3.Notice("iCloud Mirror loaded \u2713", 3e3);
+    new import_obsidian3.Notice("iCloud mirror loaded \u2713", 3e3);
   }
   onunload() {
     if (this.settings.syncOnClose) {
