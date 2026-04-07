@@ -7,7 +7,7 @@ export type StatusChangeCallback = (status: SyncStatus, stats: SyncStats) => voi
 
 export class SyncEngine {
   private running = false;
-  private configDir: string = ".obsidian";
+  private configDir: string = "";
   private stats: SyncStats = {
     lastSync: null,
     filesCopied: 0,

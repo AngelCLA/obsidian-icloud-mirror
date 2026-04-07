@@ -52,9 +52,9 @@ var DEFAULT_SETTINGS = {
     ".git"
   ],
   excludedFiles: [
-    ".obsidian/workspace.json",
-    ".obsidian/workspaces.json",
-    ".obsidian/cache",
+    "workspace.json",
+    "workspaces.json",
+    "cache",
     ".DS_Store",
     "Thumbs.db",
     "desktop.ini",
@@ -76,7 +76,7 @@ var FileUtils = class {
   constructor() {
     this.logs = [];
     this.verbose = false;
-    this.configDir = ".obsidian";
+    this.configDir = "";
   }
   setVerbose(v) {
     this.verbose = v;
@@ -326,7 +326,7 @@ var SyncEngine = class {
     this.fileUtils = fileUtils;
     this.conflictResolver = conflictResolver;
     this.running = false;
-    this.configDir = ".obsidian";
+    this.configDir = "";
     this.stats = {
       lastSync: null,
       filesCopied: 0,
@@ -574,7 +574,7 @@ var ICloudMirrorSettingTab = class extends import_obsidian.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "iCloud Mirror \u2014 settings" });
+    new import_obsidian.Setting(containerEl).setName("iCloud Mirror \u2014 settings").setHeading();
     new import_obsidian.Setting(containerEl).setName("\u{1F4C1} Paths").setHeading();
     new import_obsidian.Setting(containerEl).setName("Local vault path").setDesc(
       "Absolute path to your local working vault (e.g. D:\\ObsidianVault). Leave blank to use the current vault path."
@@ -637,18 +637,18 @@ var ICloudMirrorSettingTab = class extends import_obsidian.PluginSettingTab {
       text.inputEl.rows = 5;
     });
     new import_obsidian.Setting(containerEl).setName("Excluded files").setDesc(
-      "One per line. Supports glob patterns like *.tmp or exact paths like .obsidian/workspace.json"
+      "One per line. Supports glob patterns like *.tmp or exact paths like workspace.json"
     ).addTextArea((text) => {
       text.setPlaceholder(
-        ".obsidian/workspace.json\n.obsidian/cache\n*.tmp\n*.lock"
+        "workspace.json\nworkspaces.json\ncache\n*.tmp\n*.lock"
       ).setValue(this.plugin.settings.excludedFiles.join("\n")).onChange(async (value) => {
         this.plugin.settings.excludedFiles = value.split("\n").map((s) => s.trim()).filter(Boolean);
         await this.plugin.saveSettings();
       });
       text.inputEl.rows = 5;
     });
-    new import_obsidian.Setting(containerEl).setName("Sync .obsidian folder").setDesc(
-      "Include the .obsidian config folder in sync. Recommended: OFF \u2014 themes/plugins may be incompatible between desktop and iPhone."
+    new import_obsidian.Setting(containerEl).setName("Sync vault configuration folder").setDesc(
+      "Include the vault configuration folder in sync. Recommended: OFF \u2014 themes/plugins may be incompatible between desktop and iPhone."
     ).addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.syncObsidianFolder).onChange(async (value) => {
         this.plugin.settings.syncObsidianFolder = value;

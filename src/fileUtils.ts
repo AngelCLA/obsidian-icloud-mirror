@@ -6,7 +6,7 @@ import { FileEntry, LogEntry } from "./types";
 export class FileUtils {
   private logs: LogEntry[] = [];
   private verbose: boolean = false;
-  private configDir: string = ".obsidian";
+  private configDir: string = "";
 
   setVerbose(v: boolean) {
     this.verbose = v;

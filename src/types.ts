@@ -27,9 +27,9 @@ export const DEFAULT_SETTINGS: ICloudMirrorSettings = {
     ".git",
   ],
   excludedFiles: [
-    ".obsidian/workspace.json",
-    ".obsidian/workspaces.json",
-    ".obsidian/cache",
+    "workspace.json",
+    "workspaces.json",
+    "cache",
     ".DS_Store",
     "Thumbs.db",
     "desktop.ini",

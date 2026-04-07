@@ -13,7 +13,7 @@ export class ICloudMirrorSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl("h2", { text: "iCloud Mirror — settings" });
+    new Setting(containerEl).setName("iCloud Mirror — settings").setHeading();
 
     // ── Paths ─────────────────────────────────────────────────────────────
     new Setting(containerEl).setName("📁 Paths").setHeading();
@@ -143,12 +143,12 @@ export class ICloudMirrorSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName("Excluded files")
       .setDesc(
-        "One per line. Supports glob patterns like *.tmp or exact paths like .obsidian/workspace.json"
+        "One per line. Supports glob patterns like *.tmp or exact paths like workspace.json"
       )
       .addTextArea((text) => {
         text
           .setPlaceholder(
-            ".obsidian/workspace.json\n.obsidian/cache\n*.tmp\n*.lock"
+            "workspace.json\nworkspaces.json\ncache\n*.tmp\n*.lock"
           )
           .setValue(this.plugin.settings.excludedFiles.join("\n"))
           .onChange(async (value) => {
@@ -162,9 +162,9 @@ export class ICloudMirrorSettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName("Sync .obsidian folder")
+      .setName("Sync vault configuration folder")
       .setDesc(
-        "Include the .obsidian config folder in sync. Recommended: OFF — themes/plugins may be incompatible between desktop and iPhone."
+        "Include the vault configuration folder in sync. Recommended: OFF — themes/plugins may be incompatible between desktop and iPhone."
       )
       .addToggle((toggle) =>
         toggle
