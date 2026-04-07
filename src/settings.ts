@@ -13,7 +13,7 @@ export class ICloudMirrorSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    new Setting(containerEl).setName("iCloud Mirror").setHeading();
+    new Setting(containerEl).setName("").setHeading();
 
     // ── Paths ─────────────────────────────────────────────────────────────
     new Setting(containerEl).setName("📁 Paths").setHeading();
