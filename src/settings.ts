@@ -164,7 +164,7 @@ export class ICloudMirrorSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName("Sync vault configuration folder")
       .setDesc(
-        "Include the vault configuration folder in sync. Recommended: OFF — themes/plugins may be incompatible between desktop and iPhone."
+        "Include the vault configuration folder in sync. Recommended: off — themes/plugins may be incompatible between desktop and iPhone."
       )
       .addToggle((toggle) =>
         toggle
