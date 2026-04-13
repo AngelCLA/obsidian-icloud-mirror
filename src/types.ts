@@ -10,6 +10,7 @@ export interface ICloudMirrorSettings {
   syncObsidianFolder: boolean;
   safeMode: boolean;
   mirrorMode: boolean;
+  pullFromMirror: boolean;
   verboseLogs: boolean;
   debounceDelay: number; // seconds
 }
@@ -39,6 +40,7 @@ export const DEFAULT_SETTINGS: ICloudMirrorSettings = {
   syncObsidianFolder: false,
   safeMode: true,
   mirrorMode: false,
+  pullFromMirror: false,
   verboseLogs: false,
   debounceDelay: 5,
 };

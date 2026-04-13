@@ -214,6 +214,20 @@ export class ICloudMirrorSettingTab extends PluginSettingTab {
           })
       );
 
+    new Setting(containerEl)
+      .setName("Pull new files from iCloud mirror")
+      .setDesc(
+        "When a file is added in the iCloud mirror (e.g. from your iPhone) and does not exist locally, copy it to the local vault automatically during every sync. Without this, mirror mode would delete those files from iCloud."
+      )
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.pullFromMirror)
+          .onChange(async (value) => {
+            this.plugin.settings.pullFromMirror = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
     // ── Logging ────────────────────────────────────────────────────────────
     new Setting(containerEl).setName("🪵 Logging").setHeading();
 

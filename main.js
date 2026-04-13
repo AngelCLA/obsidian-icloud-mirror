@@ -64,6 +64,7 @@ var DEFAULT_SETTINGS = {
   syncObsidianFolder: false,
   safeMode: true,
   mirrorMode: false,
+  pullFromMirror: false,
   verboseLogs: false,
   debounceDelay: 5
 };
@@ -397,6 +398,42 @@ var SyncEngine = class {
         this.settings.excludedFiles,
         this.settings.syncObsidianFolder
       );
+      if (this.settings.pullFromMirror && this.fileUtils.pathExists(icloudMirrorPath)) {
+        const cloudFiles = this.fileUtils.listFiles(
+          icloudMirrorPath,
+          this.settings.excludedFolders,
+          this.settings.excludedFiles,
+          this.settings.syncObsidianFolder
+        );
+        const localSet = new Set(localFiles);
+        for (const relPath of cloudFiles) {
+          if (!localSet.has(relPath)) {
+            const srcAbs = path2.join(icloudMirrorPath, relPath);
+            const destAbs = path2.join(localVaultPath, relPath);
+            try {
+              const eval_ = await this.conflictResolver.evaluate(srcAbs, destAbs, relPath);
+              if (eval_.action === "conflict") {
+                this.fileUtils.warn(`Pull conflict: ${relPath}`);
+                sessionStats.conflicts++;
+                this.setStatus("conflict");
+                await this.conflictResolver.backup(destAbs);
+                await this.fileUtils.copyFile(srcAbs, destAbs);
+                sessionStats.copied++;
+              } else if (eval_.action !== "skip") {
+                this.fileUtils.info(`Pull from mirror: ${relPath}`);
+                await this.fileUtils.copyFile(srcAbs, destAbs);
+                sessionStats.copied++;
+              }
+              localSet.add(relPath);
+              localFiles.push(relPath);
+            } catch (err) {
+              const message = err instanceof Error ? err.message : String(err);
+              this.fileUtils.error(`Error pulling ${relPath}: ${message}`);
+              sessionStats.errors++;
+            }
+          }
+        }
+      }
       for (const relPath of localFiles) {
         const srcAbs = path2.join(localVaultPath, relPath);
         const destAbs = path2.join(icloudMirrorPath, relPath);
@@ -434,9 +471,9 @@ var SyncEngine = class {
           this.settings.excludedFiles,
           this.settings.syncObsidianFolder
         );
-        const localSet = new Set(localFiles);
+        const mirrorLocalSet = new Set(localFiles);
         for (const relPath of destFiles) {
-          if (!localSet.has(relPath)) {
+          if (!mirrorLocalSet.has(relPath)) {
             const destAbs = path2.join(icloudMirrorPath, relPath);
             this.fileUtils.info(`Mirror delete: ${relPath}`);
             try {
@@ -677,6 +714,14 @@ var ICloudMirrorSettingTab = class extends import_obsidian.PluginSettingTab {
           return;
         }
         this.plugin.settings.mirrorMode = value;
+        await this.plugin.saveSettings();
+      })
+    );
+    new import_obsidian.Setting(containerEl).setName("Pull new files from iCloud mirror").setDesc(
+      "When a file is added in the iCloud mirror (e.g. from your iPhone) and does not exist locally, copy it to the local vault automatically during every sync. Without this, mirror mode would delete those files from iCloud."
+    ).addToggle(
+      (toggle) => toggle.setValue(this.plugin.settings.pullFromMirror).onChange(async (value) => {
+        this.plugin.settings.pullFromMirror = value;
         await this.plugin.saveSettings();
       })
     );

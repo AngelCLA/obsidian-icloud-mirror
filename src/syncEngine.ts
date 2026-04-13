@@ -99,6 +99,45 @@ export class SyncEngine {
         this.settings.syncObsidianFolder
       );
 
+      // Pull phase: copy files that exist only in iCloud mirror → local
+      if (this.settings.pullFromMirror && this.fileUtils.pathExists(icloudMirrorPath)) {
+        const cloudFiles = this.fileUtils.listFiles(
+          icloudMirrorPath,
+          this.settings.excludedFolders,
+          this.settings.excludedFiles,
+          this.settings.syncObsidianFolder
+        );
+        const localSet = new Set(localFiles);
+        for (const relPath of cloudFiles) {
+          if (!localSet.has(relPath)) {
+            const srcAbs = path.join(icloudMirrorPath, relPath);
+            const destAbs = path.join(localVaultPath, relPath);
+            try {
+              const eval_ = await this.conflictResolver.evaluate(srcAbs, destAbs, relPath);
+              if (eval_.action === "conflict") {
+                this.fileUtils.warn(`Pull conflict: ${relPath}`);
+                sessionStats.conflicts++;
+                this.setStatus("conflict");
+                await this.conflictResolver.backup(destAbs);
+                await this.fileUtils.copyFile(srcAbs, destAbs);
+                sessionStats.copied++;
+              } else if (eval_.action !== "skip") {
+                this.fileUtils.info(`Pull from mirror: ${relPath}`);
+                await this.fileUtils.copyFile(srcAbs, destAbs);
+                sessionStats.copied++;
+              }
+              // Add to localSet so the mirror-delete phase won't remove it from iCloud
+              localSet.add(relPath);
+              localFiles.push(relPath);
+            } catch (err: unknown) {
+              const message = err instanceof Error ? err.message : String(err);
+              this.fileUtils.error(`Error pulling ${relPath}: ${message}`);
+              sessionStats.errors++;
+            }
+          }
+        }
+      }
+
       for (const relPath of localFiles) {
         const srcAbs = path.join(localVaultPath, relPath);
         const destAbs = path.join(icloudMirrorPath, relPath);
@@ -141,9 +180,10 @@ export class SyncEngine {
           this.settings.excludedFiles,
           this.settings.syncObsidianFolder
         );
-        const localSet = new Set(localFiles);
+        // localFiles already includes any files pulled from iCloud in the pull phase above
+        const mirrorLocalSet = new Set(localFiles);
         for (const relPath of destFiles) {
-          if (!localSet.has(relPath)) {
+          if (!mirrorLocalSet.has(relPath)) {
             const destAbs = path.join(icloudMirrorPath, relPath);
             this.fileUtils.info(`Mirror delete: ${relPath}`);
             try {
